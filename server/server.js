@@ -7,10 +7,10 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Import routes
-const postRoutes = require('./routes/posts');
-const categoryRoutes = require('./routes/categories');
-const authRoutes = require('./routes/auth');
+// Import routes and middleware
+const postRoutes = require('./routes/postRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const errorHandler = require('./middleware/errorHandler');
 
 // Load environment variables
 dotenv.config();
@@ -38,7 +38,6 @@ if (process.env.NODE_ENV === 'development') {
 // API routes
 app.use('/api/posts', postRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/auth', authRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -46,17 +45,15 @@ app.get('/', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.statusCode || 500).json({
-    success: false,
-    error: err.message || 'Server Error',
-  });
-});
+app.use(errorHandler);
+
+
+app.use("/uploads", express.static("uploads"));
+
 
 // Connect to MongoDB and start server
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
     app.listen(PORT, () => {
@@ -71,8 +68,7 @@ mongoose
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
-  // Close server & exit process
   process.exit(1);
 });
 
-module.exports = app; 
+module.exports = app;
